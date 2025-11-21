@@ -19,11 +19,11 @@ from datetime import timedelta
 # ==================== CONFIGURATION ====================
 class Config:
     # DeepSeek API
-    DEEPSEEK_API_KEY = "sk-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" # Your DeepSeek API key
+    DEEPSEEK_API_KEY = "sk-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
     DEEPSEEK_BASE_URL = "https://api.deepseek.com"
     MODEL = "deepseek-reasoner"  # DeepSeek-R1 ("thinking" mode)
     
-    # Trading Hours (Local Time in GMT+2)
+    # Trading Hours (Local Time)
     TRADING_START_HOUR = 2
     TRADING_END_HOUR = 21
     
@@ -822,7 +822,7 @@ class GPTTradingEngine:
                     {"role": "user", "content": prompt}
                 ],
                 temperature=0.7,
-                max_tokens=4000
+                max_tokens=16000
             )
             
             # Handle thinking model response
@@ -873,7 +873,7 @@ class GPTTradingEngine:
         """Get the core system prompt for DeepSeek-V3.2-Exp"""
         return """You are an ELITE QUANT TRADER managing a REAL growth challenge.
 
-YOUR ONLY GOAL: Grow your account through MULTI-TIMEFRAME CONFLUENCE trading.
+YOUR ONLY GOAL: Grow $200 → $1000+ through MULTI-TIMEFRAME CONFLUENCE trading.
 
 DYNAMIC RISK (YOU DECIDE 0.5-2%):
 Choose your risk per trade based on confluence strength:
@@ -910,7 +910,7 @@ WHAT YOU LOOK FOR:
    - Multiple TFs showing recent oversold/overbought conditions, exhaustion, mean reversion, etc.
    - Convergence of indicators across timeframes
    - A signal is forming (For example: a bullish or bearish Heikin Ashi reversal candle, stochastic are crossing, etc.)
-   - The signal is confirmed by multiple indicators across timeframes.
+   - The signal is confirmed by multiple patterns and indicator confluence across different timeframes.
    - Major trend is in the direction of the signal.
    - A CLEAR SIGNAL TO ENTER A TRADE. YOU ALWAYS TRADE USING THE M15 PRICES. H1 OR H4 CANDLE MIGHT STILL BE FORMING.
    
@@ -923,9 +923,10 @@ WHAT YOU LOOK FOR:
    - ATR: Volatility expansion/contraction
    - Bollinger Bands: Squeezes, breakouts
    - Price actions patterns
-   - CANDLESTICK PATTERNS: Doji, Engulfing, Hammer, Shooting Star, Morning/Evening Star
    - SUPPORT/RESISTANCE: Price bouncing off levels, breakouts/breakdowns
-   - RECENT CANDLES: Look at last 5 M15 candles for micro-trends, wicks, rejection patterns
+   - RECENT CANDLES: Look at last candles for trends, rejections, patterns
+   - YOU MUST HAVE A SOLID CONFLUENCE OF PATTERNS AND INDICATORS TO ENTER A TRADE. YOU ARE SMART AND NEVER BET RANDOMLY.
+
 
 YOUR PROCESS:
 1. Check EACH timeframe (M15, H1, H4) for EACH symbol

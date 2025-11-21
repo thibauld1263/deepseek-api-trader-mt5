@@ -12,7 +12,7 @@ What it does
 
 There are 2 files: 
 - Signals: Send signal only
-- DEEPSEEK: Trading on its own through API
+- DEEPSEEK: Trading on its own through MT5, fully independant
 
 Requirements
 

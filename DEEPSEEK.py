@@ -19,7 +19,7 @@ from datetime import timedelta
 # ==================== CONFIGURATION ====================
 class Config:
     # DeepSeek API
-    DEEPSEEK_API_KEY = "sk-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" # Your DeepSeek API key
+    DEEPSEEK_API_KEY = "sk-XXXXXXXXXXXXXXXXXXXXXXXXXXX"
     DEEPSEEK_BASE_URL = "https://api.deepseek.com"
     MODEL = "deepseek-reasoner"  # DeepSeek-R1 ("thinking" mode)
     
@@ -38,7 +38,7 @@ class Config:
     MAX_DAILY_LOSS = 25.0  # % of account balance (stop trading for the day)
     
     # Auto-Trade
-    AUTO_TRADE = True  # Set to False for simulation
+    AUTO_TRADE = False  # SIGNALS ONLY - No execution
     
     # Timeframes for multi-timeframe analysis
     TF_M15 = mt5.TIMEFRAME_M15
@@ -822,7 +822,7 @@ class GPTTradingEngine:
                     {"role": "user", "content": prompt}
                 ],
                 temperature=0.7,
-                max_tokens=4000
+                max_tokens=16000
             )
             
             # Handle thinking model response
@@ -910,7 +910,7 @@ WHAT YOU LOOK FOR:
    - Multiple TFs showing recent oversold/overbought conditions, exhaustion, mean reversion, etc.
    - Convergence of indicators across timeframes
    - A signal is forming (For example: a bullish or bearish Heikin Ashi reversal candle, stochastic are crossing, etc.)
-   - The signal is confirmed by multiple indicators across timeframes.
+   - The signal is confirmed by multiple patterns and indicator confluence across different timeframes.
    - Major trend is in the direction of the signal.
    - A CLEAR SIGNAL TO ENTER A TRADE. YOU ALWAYS TRADE USING THE M15 PRICES. H1 OR H4 CANDLE MIGHT STILL BE FORMING.
    
@@ -923,9 +923,10 @@ WHAT YOU LOOK FOR:
    - ATR: Volatility expansion/contraction
    - Bollinger Bands: Squeezes, breakouts
    - Price actions patterns
-   - CANDLESTICK PATTERNS: Doji, Engulfing, Hammer, Shooting Star, Morning/Evening Star
    - SUPPORT/RESISTANCE: Price bouncing off levels, breakouts/breakdowns
-   - RECENT CANDLES: Look at last 5 M15 candles for micro-trends, wicks, rejection patterns
+   - RECENT CANDLES: Look at last candles for trends, rejections, patterns
+   - YOU MUST HAVE A SOLID CONFLUENCE OF PATTERNS AND INDICATORS TO ENTER A TRADE. YOU ARE SMART AND NEVER BET RANDOMLY.
+
 
 YOUR PROCESS:
 1. Check EACH timeframe (M15, H1, H4) for EACH symbol
@@ -1829,9 +1830,9 @@ class ProfessionalTradingSystem:
         self.start_time = datetime.datetime.now()
     
     def initialize(self) -> bool:
-        """Initialize the trading system"""
+        """Initialize the signal system"""
         print("\n" + "=" * 80)
-        print("DEEPSEEK-V3.2-Exp MULTI-TIMEFRAME CONFLUENCE SYSTEM")
+        print("📊 DEEPSEEK TRADING SIGNALS - LIVE MODE")
         print("=" * 80)
         
         # Check API key
@@ -1845,17 +1846,13 @@ class ProfessionalTradingSystem:
             return False
         
         # Display configuration
-        print(f"\n CONFIGURATION:")
-        print(f"   Model: {Config.MODEL} (DeepSeek-V3.2-Exp)")
-        print(f"   API: DeepSeek")
-        print(f"    STRATEGY: Multi-Timeframe Confluence + Mean Reversion")
-        print(f"    CHALLENGE: Grow ${Config.INITIAL_BALANCE:.0f} → $1000+")
+        print(f"\n⚙️  CONFIGURATION:")
+        print(f"   Model: {Config.MODEL} (DeepSeek Reasoner)")
+        print(f"   Mode: SIGNALS ONLY (No Auto-Trading)")
+        print(f"   Strategy: Multi-Timeframe Confluence + Mean Reversion")
         print(f"   Trading Hours: {Config.TRADING_START_HOUR}:00 - {Config.TRADING_END_HOUR}:00 (Local)")
-        print(f"   Scan Interval: {Config.SCAN_INTERVAL // 60} minutes")
-        print(f"   Risk per Trade: {Config.RISK_PER_TRADE_MIN}% - {Config.RISK_PER_TRADE_MAX}% (DeepSeek decides)")
-        print(f"   Max Positions: {Config.MAX_POSITIONS}")
-        print(f"   Max Daily Loss: {Config.MAX_DAILY_LOSS}%")
-        print(f"   Auto-Trade: {'ENABLED' if Config.AUTO_TRADE else 'DISABLED (Simulation)'}")
+        print(f"   Scan Interval: {Config.SCAN_INTERVAL // 60} minutes (M15 candle opens)")
+        print(f"   Symbols: Market Watch ({len(self.mt5.get_market_watch_symbols())} symbols)")
         print("=" * 80)
         
         return True
@@ -1876,12 +1873,12 @@ class ProfessionalTradingSystem:
         return False
     
     def run_scan(self, symbols: List[str]):
-        """Run PORTFOLIO scan cycle - ONE API call for ALL symbols"""
+        """Run PORTFOLIO scan cycle - Generate SIGNALS ONLY"""
         self.scan_count += 1
         now = datetime.datetime.now()
         
         print(f"\n{'=' * 80}")
-        print(f"🌍 PORTFOLIO SCAN #{self.scan_count} | {now.strftime('%H:%M:%S')}")
+        print(f"📡 SIGNAL SCAN #{self.scan_count} | {now.strftime('%Y-%m-%d %H:%M:%S')}")
         print(f"{'=' * 80}")
         
         # Check trading hours
@@ -1932,49 +1929,78 @@ class ProfessionalTradingSystem:
             print("\n[ERROR] No trading decisions from DeepSeek")
             return
         
-        # === STEP 3: Execute ALL decisions ===
-        print(f"\n🎯 Executing {len(decisions)} trading decisions...")
+        # === STEP 3: Display SIGNALS ===
+        print(f"\n{'=' * 80}")
+        print(f"📊 TRADING SIGNALS - {len(decisions)} SYMBOLS ANALYZED")
+        print(f"{'=' * 80}\n")
         
         # Map decisions to symbols
         symbol_list = list(all_analysis.keys())
         
-        if Config.AUTO_TRADE:
-            for i, decision in enumerate(decisions):
-                # Use symbol from decision if available, otherwise use index
-                if 'symbol' in decision and decision['symbol']:
-                    symbol = decision['symbol']
-                elif i < len(symbol_list):
-                    symbol = symbol_list[i]
-                else:
-                    print(f"\n   [WARN] Decision {i+1} has no symbol and index out of range")
-                    continue
-                    
-                print(f"\n   [EXEC] {symbol}: {decision.get('action', 'WAIT')}")
+        # Count signal types
+        buy_signals = 0
+        sell_signals = 0
+        close_signals = 0
+        wait_signals = 0
+        
+        for i, decision in enumerate(decisions):
+            # Use symbol from decision if available, otherwise use index
+            if 'symbol' in decision and decision['symbol']:
+                symbol = decision['symbol']
+            elif i < len(symbol_list):
+                symbol = symbol_list[i]
+            else:
+                continue
+            
+            action = decision.get('action', 'WAIT')
+            
+            # Display signal
+            if action == 'WAIT':
+                wait_signals += 1
+                print(f"⏸️  {symbol:12} → WAIT")
                 
-                try:
-                    self._execute_decision(symbol, decision)
-                except Exception as e:
-                    print(f"      [ERROR] Execution error: {e}")
-        else:
-            print(f"   [WARN] Auto-trade disabled (simulation mode)")
-            for i, decision in enumerate(decisions):
-                # Use symbol from decision if available, otherwise use index
-                if 'symbol' in decision and decision['symbol']:
-                    symbol = decision['symbol']
-                elif i < len(symbol_list):
-                    symbol = symbol_list[i]
-                else:
-                    continue
-                print(f"      {symbol}: {decision.get('action', 'WAIT')}")
+            elif action in ['CLOSE', 'CLOSE_ALL']:
+                close_signals += 1
+                print(f"❌ {symbol:12} → CLOSE ALL POSITIONS")
+                
+            elif action == 'BUY':
+                buy_signals += 1
+                entry = decision.get('entry', 0)
+                sl = decision.get('stop_loss', 0)
+                tp = decision.get('take_profit_1', 0)
+                risk = decision.get('risk_percent', 2.0)
+                
+                print(f"🟢 {symbol:12} → BUY")
+                print(f"   Entry: {entry:.5f} | SL: {sl:.5f} | TP: {tp:.5f}")
+                print(f"   Risk: {risk}% | R:R: {abs(tp-entry)/abs(entry-sl):.2f}:1" if sl != entry else "")
+                print()
+                
+            elif action == 'SELL':
+                sell_signals += 1
+                entry = decision.get('entry', 0)
+                sl = decision.get('stop_loss', 0)
+                tp = decision.get('take_profit_1', 0)
+                risk = decision.get('risk_percent', 2.0)
+                
+                print(f"🔴 {symbol:12} → SELL")
+                print(f"   Entry: {entry:.5f} | SL: {sl:.5f} | TP: {tp:.5f}")
+                print(f"   Risk: {risk}% | R:R: {abs(entry-tp)/abs(sl-entry):.2f}:1" if sl != entry else "")
+                print()
+        
+        # Summary
+        print(f"{'=' * 80}")
+        print(f"📈 SIGNALS SUMMARY:")
+        print(f"   🟢 BUY:  {buy_signals}")
+        print(f"   🔴 SELL: {sell_signals}")
+        print(f"   ❌ CLOSE: {close_signals}")
+        print(f"   ⏸️  WAIT: {wait_signals}")
+        print(f"{'=' * 80}")
         
         # === Summary ===
         print(f"\n{'=' * 80}")
-        print(f"[OK] PORTFOLIO SCAN #{self.scan_count} COMPLETE")
-        
-        account = mt5.account_info()
-        print(f"💰 Balance: ${account.balance:,.2f} | Equity: ${account.equity:,.2f}")
-        print(f"📈 Today's P&L: ${self.position_manager.daily_pnl:+.2f}")
-        print(f"[INFO] Open Positions: {len(self.position_manager.positions)}/{Config.MAX_POSITIONS}")
+        print(f"✅ SIGNAL SCAN #{self.scan_count} COMPLETE")
+        print(f"   Time: {now.strftime('%Y-%m-%d %H:%M:%S')}")
+        print(f"   Next scan: {(now + timedelta(minutes=15)).strftime('%H:%M')}")
         print(f"{'=' * 80}")
     
     def _execute_decision(self, symbol: str, decision: Dict):
@@ -2170,9 +2196,12 @@ class ProfessionalTradingSystem:
             print(" No symbols in Market Watch!")
             return
         
-        print(f"\n Monitoring {len(symbols)} symbols: {', '.join(symbols)}")
-        print(f" CANDLE SYNC: Scanning at M15 candle opens (9:00, 9:15, 9:30...)")
-        print(f" Trading hours: {Config.TRADING_START_HOUR}:00 - {Config.TRADING_END_HOUR}:00")
+        print(f"\n📡 Monitoring {len(symbols)} symbols for LIVE SIGNALS:")
+        for i in range(0, len(symbols), 6):
+            print(f"   {', '.join(symbols[i:i+6])}")
+        print(f"\n⏰ Scanning at M15 candle opens (every 15 minutes)")
+        print(f"   Trading hours: {Config.TRADING_START_HOUR}:00 - {Config.TRADING_END_HOUR}:00")
+        print(f"\n💡 MODE: SIGNALS ONLY - No automatic execution")
         print("\n Press CTRL+C to stop\n")
         
         try:
@@ -2230,26 +2259,18 @@ class ProfessionalTradingSystem:
                 
         except KeyboardInterrupt:
             print("\n\n" + "=" * 80)
-            print(" SYSTEM STOPPED BY USER")
+            print("🛑 SIGNAL BOT STOPPED BY USER")
             print("=" * 80)
             
-            # Final summary
-            self.position_manager.update_positions()
-            if self.position_manager.positions:
-                print(f"\n {len(self.position_manager.positions)} positions still open:")
-                print(self.position_manager.get_positions_summary())
-            
             runtime = datetime.datetime.now() - self.start_time
-            print(f"\n SESSION SUMMARY:")
+            print(f"\n📊 SESSION SUMMARY:")
             print(f"   Runtime: {runtime}")
             print(f"   Total Scans: {self.scan_count}")
-            print(f"   Today's P&L: ${self.position_manager.daily_pnl:+.2f}")
-            print(f"   Trades Closed: {len(self.position_manager.closed_positions_today)}")
             print("=" * 80)
         
         finally:
             self.mt5.disconnect()
-            print("\n System shutdown complete")
+            print("\n✅ Signal bot shutdown complete")
 
 # ==================== ENTRY POINT ====================
 if __name__ == "__main__":

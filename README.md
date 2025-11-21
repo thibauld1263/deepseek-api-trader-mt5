@@ -11,15 +11,13 @@ What it does
 - Uses all symbols in your Market Watch
 
 There are 2 files: 
-- Signals only
-- Trading on its own
+- Signals: Send signal only
+- DEEPSEEK: Trading on its own through API
 
 Requirements
 
-pip install MetaTrader5 pandas numpy ta-lib openai
+pip install MetaTrader5 pandas numpy openai ta-lib
 
 Note: You need MetaTrader 5 installed and running.
-
-PROMPT!
 
 Please, adapt the prompt to your own strategy. Also, if needed, adapt the max_tokens. 

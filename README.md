@@ -8,6 +8,7 @@ What it does
 - Scans market every 15 minutes (M15 candle opens)
 - Analyzes multiple timeframes (M15, H1, H4) for confluence
 - Uses AI to make trading decisions
+- Uses all symbols in your Market Watch
 
 There are 2 files: 
 - Signals only

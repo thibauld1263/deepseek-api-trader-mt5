@@ -21,3 +21,5 @@ pip install MetaTrader5 pandas numpy openai ta-lib
 Note: You need MetaTrader 5 installed and running.
 
 Please, adapt the prompt to your own strategy. Also, if needed, adapt the max_tokens. 
+
+**Claude Version, and full insight: https://medium.com/@thibauld1263/table-of-contents-f92f9ae840de**
